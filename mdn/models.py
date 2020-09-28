@@ -35,7 +35,7 @@ class MixtureDensity(nn.Module):
 
     def sample(self, x):
         pi, normal = self.forward(x)
-        samples = torch.sum(pi.sample().unsqueeze(-1) * normal.sample(), dim=1)
+        samples = torch.sum(pi.sample().unsqueeze(-1) * normal.sample(), dim=-1)
         return samples
 
 
@@ -51,22 +51,21 @@ class MixtureDensityNetwork(MixtureDensity):
         dim_in (int): dimensionality of the covariates
         dim_out (int): dimensionality of the response variable
         n_components (int): number of components in the mixture model
+        network (nn.Module): neural network used to process data
     """
-    def __init__(self, dim_in, dim_out, n_components):
+    def __init__(self, dim_in, dim_out, n_components, network=None):
         super().__init__(dim_in, dim_out, n_components)
 
-        self.hidden_layer = nn.Sequential(
-            nn.Linear(dim_in, dim_in),
-            nn.ELU()
-        )
+        if network:
+            self.hidden_layer = network
+        else:
+            self.hidden_layer = nn.Sequential(
+                nn.Linear(dim_in, dim_in),
+                nn.ELU()
+            )
 
     def forward(self, x):
         return super().forward(self.hidden_layer(x))
-
-    def sample(self, x):
-        pi, normal = self.forward(x)
-        samples = torch.sum(pi.sample().unsqueeze(-1) * normal.sample(), dim=1)
-        return samples
 
 
 class MixtureDiagNormal(nn.Module):
