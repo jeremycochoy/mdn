@@ -21,22 +21,24 @@ class MixtureDensity(nn.Module):
         super().__init__()
         self.pi_network = Categorical(dim_in, n_components)
         self.normal_network = MixtureDiagNormal(dim_in, dim_out,
-                                                n_components)
+                                                       n_components)
 
     def forward(self, x):
         return self.pi_network(x), self.normal_network(x)
 
     def loss(self, x, y):
-        pi, normal = self.forward(x)
-        loglik = normal.log_prob(y.unsqueeze(-1).expand_as(normal.loc))
-        loglik = torch.sum(loglik, dim=-1)
-        loss = -torch.logsumexp(torch.log(pi.probs) + loglik, dim=-1)
-        return loss
+        pi, normal = self.forward(x)  # Nx*xC, Nx*xCxO
+
+        loglik = normal.log_prob(y.unsqueeze(-2).expand_as(normal.loc))  # Nx*xCxO
+        loglik = torch.sum(loglik, dim=-1)  # Nx*xC
+        loss = -torch.logsumexp(torch.log(pi.probs) + loglik, dim=-1)  # Nx*
+        return loss.mean()
 
     def sample(self, x):
         pi, normal = self.forward(x)
         samples = torch.sum(pi.sample().unsqueeze(-1) * normal.sample(), dim=-2)
         return samples
+
 
 
 class MixtureDensityNetwork(MixtureDensity):

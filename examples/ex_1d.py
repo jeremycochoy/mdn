@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     for i in range(args.n_iterations):
         optimizer.zero_grad()
-        loss = model.loss(x, y).mean()
+        loss = model.loss(x, y)
         loss.backward()
         optimizer.step()
         if i % 100 == 0:
